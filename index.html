@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  /* Trang vỏ dùng chung cho mọi đợt học – Bộ công cụ học tập trực tuyến v1.0 */
+  /* Trang vỏ dùng chung cho mọi đợt học – Bộ công cụ học tập trực tuyến v1.1 */
   :root { --nen: #f0ebf8; --xanh: #1e8a5a; --vang: #c9a227; --chu: #1f2a44; --nhat: #5f6b7a; --vien: #e3e6ea; }
   html, body { margin: 0; height: 100%; background: var(--nen); font-family: Roboto, Arial, sans-serif; color: var(--chu); }
   #khung { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--nen); }
@@ -46,6 +46,7 @@
     <div class="muc"><div class="nhan">Đợt học tập</div><div class="gt dot" id="p_dot"></div></div>
     <div class="muc"><div class="nhan">Họ và tên</div><div class="gt" id="p_ten"></div></div>
     <div class="muc"><div class="nhan">Tổ chức đảng</div><div class="gt" id="p_tcd"></div></div>
+    <div class="muc" id="m_cv"><div class="nhan">Chức vụ trong Đảng</div><div class="gt" id="p_cv"></div></div>
     <div class="muc"><div class="nhan">Thời gian hoàn thành</div><div class="gt" id="p_tg"></div></div>
     <div class="chuthich" id="p_ct"></div>
     <div class="luotmoi"><button type="button" id="nut_moi">Người khác học trên thiết bị này? Bắt đầu lượt học mới</button></div>
@@ -115,6 +116,8 @@
     document.getElementById('p_dot').textContent = kq.ten_dot || '';
     document.getElementById('p_ten').textContent = kq.ho_ten || '';
     document.getElementById('p_tcd').textContent = kq.to_chuc || '';
+    document.getElementById('p_cv').textContent = kq.chuc_vu || '';
+    document.getElementById('m_cv').style.display = kq.chuc_vu ? '' : 'none';
     document.getElementById('p_tg').textContent = kq.thoi_gian || '';
     document.getElementById('p_ct').textContent = kq.chu_thich || '';
     if (kq.ten_dot) document.title = kq.ten_dot;
