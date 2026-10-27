@@ -115,7 +115,7 @@
   function goi(thamSo, xong) {
     var ten = '__ht' + (++dem) + '_' + Date.now();
     var the = document.createElement('script');
-    var hetGio = setTimeout(function () { donDep(); xong(null); }, 10000);
+    var hetGio = setTimeout(function () { donDep(); xong(null); }, 8000);
     function donDep() { clearTimeout(hetGio); try { delete window[ten]; } catch (e) { window[ten] = undefined; } if (the.parentNode) the.parentNode.removeChild(the); }
     window[ten] = function (kq) { donDep(); xong(kq); };
     var q = [];
@@ -258,12 +258,13 @@
     (P.get('nhung') === '1' ? 'embedded=true&' : '') + 'usp=pp_url&entry.' + ENTRY + '=' + encodeURIComponent(MA);
   khung.src = src;
 
-  // Tên tab theo tên đợt (không chặn việc hiển thị Form)
-  goi({ d: DOT, loai: 'cauhinh' }, function (kq) { if (kq && kq.ok && kq.ten_dot) document.title = kq.ten_dot; });
+  // Tên tab: lấy từ tham số t= của link (nếu có); không gọi máy chủ khi mở link để giảm tải
+  if (P.get('t')) document.title = P.get('t');
 
   // ---- Theo dõi lúc gửi ----
   var soLanTai = 0, daXong = false, dangDo = false;
-  var LICH = [800, 1500, 2500, 4000, 6000, 9000, 13000];
+  // Lịch tra phiếu sau khi gửi (mili giây, cộng dồn); có độ lệch ngẫu nhiên để nhiều người gửi cùng lúc không dồn vào một thời điểm
+  var LICH = [1500, 3500, 6000, 9500, 14000, 20000, 28000, 38000, 50000, 65000, 80000];
   function doTim(lan) {
     if (daXong || lan >= LICH.length) { dangDo = false; return; }
     setTimeout(function () {
@@ -277,7 +278,7 @@
           doTim(lan + 1);
         }
       });
-    }, lan === 0 ? LICH[0] : LICH[lan] - LICH[lan - 1]);
+    }, (function () { var k = lan === 0 ? LICH[0] : LICH[lan] - LICH[lan - 1]; return k * (0.7 + Math.random() * 0.6); })()); // lệch ngẫu nhiên ±30%
   }
   khung.addEventListener('load', function () {
     soLanTai++;
