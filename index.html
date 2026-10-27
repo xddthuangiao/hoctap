@@ -226,7 +226,7 @@
 
   // ---- Nạp Form ----
   var src = NGUON_FORM + (NGUON_FORM.indexOf('?') >= 0 ? '&' : '?') +
-    'embedded=true&usp=pp_url&entry.' + ENTRY + '=' + encodeURIComponent(MA);
+    (P.get('nhung') === '0' ? '' : 'embedded=true&') + 'usp=pp_url&entry.' + ENTRY + '=' + encodeURIComponent(MA);
   khung.src = src;
 
   // Tên tab theo tên đợt (không chặn việc hiển thị Form)
