@@ -30,6 +30,14 @@
   #baoloi { display: none; max-width: 640px; margin: 15vh auto 0; padding: 24px; background: #fff; border-radius: 8px;
             text-align: center; line-height: 1.6; box-sizing: border-box; }
   @media (max-width: 480px) { .ghinhan { font-size: 21px; } .tieude { font-size: 18px; } .gt { font-size: 19px; } .gt.dot { font-size: 19px; } }
+  .luu { text-align: center; margin-top: 28px; }
+  .luu button { background: var(--xanh); color: #fff; border: 0; border-radius: 6px; font: 500 16px Roboto, Arial, sans-serif;
+                padding: 12px 22px; cursor: pointer; }
+  .luu button:disabled { opacity: .6; cursor: default; }
+  #xemanh { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 10; overflow: auto; text-align: center; padding: 16px; box-sizing: border-box; }
+  #xemanh p { color: #fff; font-size: 15px; margin: 8px 0 12px; }
+  #xemanh img { max-width: 100%; height: auto; background: #fff; }
+  #xemanh button { margin-top: 12px; background: #fff; border: 0; border-radius: 6px; padding: 10px 20px; font: inherit; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -49,11 +57,13 @@
     <div class="muc" id="m_cv"><div class="nhan">Chức vụ trong Đảng</div><div class="gt" id="p_cv"></div></div>
     <div class="muc"><div class="nhan">Thời gian hoàn thành</div><div class="gt" id="p_tg"></div></div>
     <div class="chuthich" id="p_ct"></div>
+    <div class="luu"><button type="button" id="nut_luu">Lưu ảnh phiếu xác nhận</button></div>
     <div class="luotmoi"><button type="button" id="nut_moi">Người khác học trên thiết bị này? Bắt đầu lượt học mới</button></div>
   </div>
 </main>
 
 <div id="baoloi"></div>
+<div id="xemanh"><p>Nhấn giữ vào ảnh (điện thoại) hoặc nhấp chuột phải → Lưu hình ảnh (máy tính) để lưu phiếu.</p><img id="anhphieu" alt="Phiếu xác nhận học tập"><br><button type="button" id="nut_dong">Đóng</button></div>
 
 <script>
 (function () {
@@ -128,6 +138,85 @@
     window.scrollTo(0, 0);
   }
   document.getElementById('nut_moi').addEventListener('click', function () { xoa(); location.reload(); });
+
+  // ---- Lưu ảnh phiếu (vẽ trực tiếp, không cần thư viện ngoài) ----
+  function boDau(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, ''); }
+  function chiaDong(ctx, chu, rong) {
+    var ra = [];
+    String(chu).split('\n').forEach(function (doan) {
+      var tu = doan.split(' '), dong = '';
+      tu.forEach(function (w) {
+        var thu = dong ? dong + ' ' + w : w;
+        if (ctx.measureText(thu).width > rong && dong) { ra.push(dong); dong = w; } else dong = thu;
+      });
+      ra.push(dong);
+    });
+    return ra;
+  }
+  function veAnhPhieu() {
+    var W = 1080, L = 72, R = W - 72, RONG = R - L, F = 'Roboto, Arial, sans-serif';
+    var muc = [['ĐỢT HỌC TẬP', 'p_dot', true], ['HỌ VÀ TÊN', 'p_ten'], ['TỔ CHỨC ĐẢNG', 'p_tcd'], ['CHỨC VỤ TRONG ĐẢNG', 'p_cv'], ['THỜI GIAN HOÀN THÀNH', 'p_tg']]
+      .map(function (m) { var v = document.getElementById(m[1]).textContent.trim(); return { nhan: m[0], gt: m[2] ? v.toUpperCase() : v }; })
+      .filter(function (m) { return m.gt; });
+    var ct = document.getElementById('p_ct').textContent.trim();
+    var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    function bo(ve) {
+      var y = 64;
+      if (ve) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, cv.height);
+        ctx.fillStyle = '#1e8a5a'; ctx.beginPath(); ctx.arc(W / 2, y + 56, 56, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(W / 2 - 25, y + 58); ctx.lineTo(W / 2 - 6, y + 77); ctx.lineTo(W / 2 + 28, y + 38); ctx.stroke(); }
+      y += 112 + 72;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.font = '700 50px ' + F; if (ve) { ctx.fillStyle = '#1e8a5a'; ctx.fillText('ĐÃ GHI NHẬN HOÀN THÀNH', W / 2, y); }
+      y += 64; ctx.font = '700 40px ' + F; if (ve) { ctx.fillStyle = '#1f2a44'; ctx.fillText('PHIẾU XÁC NHẬN HỌC TẬP', W / 2, y); }
+      y += 36; if (ve) { ctx.fillStyle = '#c9a227'; ctx.fillRect(L, y, RONG, 5); }
+      y += 5;
+      ctx.textAlign = 'left';
+      muc.forEach(function (m, i) {
+        y += 52; ctx.font = '500 26px ' + F; if (ve) { ctx.fillStyle = '#5f6b7a'; ctx.fillText(m.nhan, L, y); }
+        ctx.font = '700 ' + (i === 0 ? 44 : 42) + 'px ' + F;
+        chiaDong(ctx, m.gt, RONG).forEach(function (d) { y += 58; if (ve) { ctx.fillStyle = '#1f2a44'; ctx.fillText(d, L, y); } });
+        y += 30; if (ve) { ctx.fillStyle = '#e3e6ea'; ctx.fillRect(L, y, RONG, 2); }
+      });
+      if (ct) { y += 40; ctx.textAlign = 'center'; ctx.font = '400 28px ' + F;
+        chiaDong(ctx, ct, RONG).forEach(function (d) { y += 44; if (ve) { ctx.fillStyle = '#5f6b7a'; ctx.fillText(d, W / 2, y); } }); }
+      return y + 64;
+    }
+    cv.width = W; cv.height = 10; cv.height = bo(false); bo(true);
+    return cv;
+  }
+  function hienAnh(url) {
+    document.querySelector('#xemanh p').textContent = 'Nhấn giữ vào ảnh (điện thoại) hoặc nhấp chuột phải → Lưu hình ảnh (máy tính) để lưu phiếu.';
+    document.getElementById('anhphieu').src = url;
+    document.getElementById('xemanh').style.display = 'block';
+  }
+  document.getElementById('nut_dong').addEventListener('click', function () { document.getElementById('xemanh').style.display = 'none'; });
+  document.getElementById('nut_luu').addEventListener('click', function () {
+    var cho = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    cho.then(function () {
+      var canvas;
+      try { canvas = veAnhPhieu(); } catch (e) { alertNhe('Không tạo được ảnh. Đồng chí chụp màn hình để lưu phiếu.'); return; }
+      var tenTep = 'Phieu_' + DOT + '_' + (boDau(document.getElementById('p_ten').textContent) || 'xac_nhan') + '.png';
+      canvas.toBlob(function (blob) {
+        if (!blob) { hienAnh(canvas.toDataURL('image/png')); return; }
+        var tep = null;
+        try { tep = new File([blob], tenTep, { type: 'image/png' }); } catch (e) {}
+        var dt = /Android|iPhone|iPad/i.test(navigator.userAgent);
+        // Điện thoại: mở bảng chia sẻ để lưu vào Ảnh hoặc gửi qua Zalo
+        if (dt && tep && navigator.canShare && navigator.canShare({ files: [tep] })) {
+          navigator.share({ files: [tep], title: 'Phiếu xác nhận học tập' }).catch(function (e) { if (!e || e.name !== 'AbortError') hienAnh(URL.createObjectURL(blob)); });
+          return;
+        }
+        var url = URL.createObjectURL(blob);
+        if (dt) { hienAnh(url); return; } // trình duyệt điện thoại không chia sẻ được: hiện ảnh để nhấn giữ lưu
+        // Máy tính: tải tệp về thư mục Tải xuống
+        var a = document.createElement('a'); a.href = url; a.download = tenTep;
+        document.body.appendChild(a); a.click(); a.remove();
+      }, 'image/png');
+    });
+  });
+  function alertNhe(t) { var p = document.querySelector('#xemanh p'); p.textContent = t; document.getElementById('anhphieu').removeAttribute('src'); document.getElementById('xemanh').style.display = 'block'; }
 
   var luu = doc();
   if (luu.phieu) { hienPhieu(luu.phieu); return; }
