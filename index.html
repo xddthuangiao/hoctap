@@ -11,6 +11,9 @@
   /* Trang vỏ dùng chung cho mọi đợt học – Bộ công cụ học tập trực tuyến v1.1 */
   :root { --nen: #f0ebf8; --xanh: #1e8a5a; --vang: #c9a227; --chu: #1f2a44; --nhat: #5f6b7a; --vien: #e3e6ea; }
   html, body { margin: 0; height: 100%; background: var(--nen); font-family: Roboto, Arial, sans-serif; color: var(--chu); }
+  #dau { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 2; background: var(--nen); padding: 12px 12px 0; box-sizing: border-box; }
+  #dau img, #p_banner { display: block; width: 100%; max-width: 770px; margin: 0 auto; border-radius: 8px; }
+  #p_banner { display: none; margin-bottom: 20px; }
   #khung { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: var(--nen); }
   #phieu { display: none; min-height: 100%; background: #fff; }
   #phieu .the { max-width: 760px; margin: 0 auto; padding: 32px 20px 40px; box-sizing: border-box; }
@@ -41,10 +44,12 @@
 </style>
 </head>
 <body>
+<div id="dau"><img id="anhdau" alt=""></div>
 <iframe id="khung" title="Biểu mẫu học tập" allow="clipboard-write"></iframe>
 
 <main id="phieu" aria-live="polite">
   <div class="the">
+    <img id="p_banner" alt="">
     <div class="dau" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
     </div>
@@ -132,6 +137,7 @@
     document.getElementById('p_ct').textContent = kq.chu_thich || '';
     if (kq.ten_dot) document.title = kq.ten_dot;
     khung.style.display = 'none';
+    document.getElementById('dau').style.display = 'none';
     khung.removeAttribute('src');
     phieu.style.display = 'block';
     document.body.style.background = '#fff';
@@ -160,9 +166,13 @@
       .filter(function (m) { return m.gt; });
     var ct = document.getElementById('p_ct').textContent.trim();
     var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    var pb = document.getElementById('p_banner'), veAnh = false, caoAnh = 0;
+    try { veAnh = pb.style.display === 'block' && pb.naturalWidth > 0 && new URL(pb.src).origin === location.origin; } catch (e) {}
+    if (veAnh) caoAnh = Math.round(RONG * pb.naturalHeight / pb.naturalWidth);
     function bo(ve) {
       var y = 64;
-      if (ve) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, cv.height);
+      if (veAnh) { if (ve) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, cv.height); ctx.drawImage(pb, L, y, RONG, caoAnh); } y += caoAnh + 40; }
+      if (ve) { if (!veAnh) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, cv.height); }
         ctx.fillStyle = '#1e8a5a'; ctx.beginPath(); ctx.arc(W / 2, y + 56, 56, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
         ctx.beginPath(); ctx.moveTo(W / 2 - 25, y + 58); ctx.lineTo(W / 2 - 6, y + 77); ctx.lineTo(W / 2 + 28, y + 38); ctx.stroke(); }
@@ -218,6 +228,25 @@
   });
   function alertNhe(t) { var p = document.querySelector('#xemanh p'); p.textContent = t; document.getElementById('anhphieu').removeAttribute('src'); document.getElementById('xemanh').style.display = 'block'; }
 
+  // ---- Ảnh đầu trang riêng của trang vỏ: chỉ dùng khi gắn tham số b=banner.png (mặc định Form mở ở chế độ thường, Google tự hiện ảnh đầu trang) ----
+  var dau = document.getElementById('dau'), anhDau = document.getElementById('anhdau'), coAnhDau = false;
+  function canKhung() {
+    var hien = coAnhDau && (soLanTai || 0) < 2 && phieu.style.display !== 'block';
+    dau.style.display = hien ? 'block' : 'none';
+    var cao = hien ? dau.offsetHeight : 0;
+    khung.style.top = cao + 'px'; khung.style.height = 'calc(100% - ' + cao + 'px)';
+  }
+  var nguonAnh = P.get('b') || '0'; // mặc định tắt: ảnh đầu trang do Google Form hiển thị (chế độ thường)
+  if (nguonAnh !== '0') {
+    anhDau.onload = function () {
+      coAnhDau = true;
+      var pb = document.getElementById('p_banner'); pb.src = anhDau.src; pb.style.display = 'block';
+      canKhung();
+    };
+    anhDau.src = nguonAnh;
+  }
+  window.addEventListener('resize', canKhung);
+
   var luu = doc();
   if (luu.phieu) { hienPhieu(luu.phieu); return; }
 
@@ -226,7 +255,7 @@
 
   // ---- Nạp Form ----
   var src = NGUON_FORM + (NGUON_FORM.indexOf('?') >= 0 ? '&' : '?') +
-    (P.get('nhung') === '0' ? '' : 'embedded=true&') + 'usp=pp_url&entry.' + ENTRY + '=' + encodeURIComponent(MA);
+    (P.get('nhung') === '1' ? 'embedded=true&' : '') + 'usp=pp_url&entry.' + ENTRY + '=' + encodeURIComponent(MA);
   khung.src = src;
 
   // Tên tab theo tên đợt (không chặn việc hiển thị Form)
@@ -252,6 +281,7 @@
   }
   khung.addEventListener('load', function () {
     soLanTai++;
+    canKhung();
     if (soLanTai >= SO_LAN_GUI && !daXong && !dangDo) { dangDo = true; doTim(0); }
   });
 })();
